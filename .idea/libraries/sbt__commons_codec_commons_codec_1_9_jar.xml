@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="sbt: commons-codec:commons-codec:1.9:jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/commons-codec/commons-codec/jars/commons-codec-1.9.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/commons-codec/commons-codec/jars/commons-codec-1.9.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/commons-codec/commons-codec/srcs/commons-codec-1.9-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/commons-codec/commons-codec/srcs/commons-codec-1.9-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

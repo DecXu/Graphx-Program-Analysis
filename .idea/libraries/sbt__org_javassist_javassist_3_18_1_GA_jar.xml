@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="sbt: org.javassist:javassist:3.18.1-GA:jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/org.javassist/javassist/bundles/javassist-3.18.1-GA.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.javassist/javassist/bundles/javassist-3.18.1-GA.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/org.javassist/javassist/srcs/javassist-3.18.1-GA-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.javassist/javassist/srcs/javassist-3.18.1-GA-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

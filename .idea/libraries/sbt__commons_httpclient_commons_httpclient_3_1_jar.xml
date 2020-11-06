@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="sbt: commons-httpclient:commons-httpclient:3.1:jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/commons-httpclient/commons-httpclient/jars/commons-httpclient-3.1.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/commons-httpclient/commons-httpclient/jars/commons-httpclient-3.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/commons-httpclient/commons-httpclient/srcs/commons-httpclient-3.1-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/commons-httpclient/commons-httpclient/srcs/commons-httpclient-3.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

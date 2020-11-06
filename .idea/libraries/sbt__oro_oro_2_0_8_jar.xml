@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="sbt: oro:oro:2.0.8:jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/oro/oro/jars/oro-2.0.8.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/oro/oro/jars/oro-2.0.8.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/oro/oro/srcs/oro-2.0.8-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/oro/oro/srcs/oro-2.0.8-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

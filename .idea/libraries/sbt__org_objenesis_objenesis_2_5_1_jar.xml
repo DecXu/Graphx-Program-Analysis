@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="sbt: org.objenesis:objenesis:2.5.1:jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/org.objenesis/objenesis/jars/objenesis-2.5.1.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.objenesis/objenesis/jars/objenesis-2.5.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.ivy2/cache/org.objenesis/objenesis/srcs/objenesis-2.5.1-sources.jar!/" />
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.objenesis/objenesis/srcs/objenesis-2.5.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

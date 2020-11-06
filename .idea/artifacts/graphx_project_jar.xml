@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="graphx_project:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/graphx_project_jar</output-path>
+    <root id="archive" name="graphx_project.jar">
+      <element id="module-output" name="graphx_project" />
+    </root>
+  </artifact>
+</component>
