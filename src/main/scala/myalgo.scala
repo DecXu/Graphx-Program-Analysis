@@ -12,8 +12,9 @@ object myalgo {
   }
 
   def split(A: Array[VertexId], B: Array[Byte], l: Int, r: Int): Int = {
+    //println("test!")
     val mid = (l + r) / 2
-    var k = l
+    var k: Int = l
     if (A(mid) < A(k)) k = mid
     if (A(r) < A(k)) k = r
     if(k != r){
@@ -28,7 +29,7 @@ object myalgo {
     val val_c: Byte = B(l)
 
     var i = l
-    for(j <- l+1 to r){
+    for(j <- l + 1 to r){
       if((A(j) < val_v) || (A(j) == val_v && B(j) < val_c)){
         i += 1
         swap(A, i, j)
@@ -58,11 +59,12 @@ object myalgo {
   def quickSort(A: Array[VertexId], B: Array[Byte], l: Int, r: Int): Unit = {
     if(l < r){
       if(r - l + 1 <= 10) insertSort(A, B, l, r)
-    }
-    else{
-      val i = split(A, B, l, r)
-      quickSort(A, B, l, i - 1)
-      quickSort(A, B, i + 1, r)
+      else{
+        //println("k")
+        val i = split(A, B, l, r)
+        quickSort(A, B, l, i - 1)
+        quickSort(A, B, i + 1, r)
+      }
     }
   }
 

@@ -14,22 +14,20 @@ class CfgNode {
     val stmt_type = s.next()
     //println(stmt_type)
     stmt_type match{
-      case "assign" => {
-        stmt = new Stmt_assign(s)
-//        println(stmt.asInstanceOf[Stmt_assign].getDst())
-//        println(stmt.asInstanceOf[Stmt_assign].getSrc())
-      }
-      case "load" => {
-        stmt = new Stmt_load(s)
-      }
-      case "store" => {
-        stmt = new Stmt_store(s)
-      }
-      case "alloca" => {
-        stmt = new Stmt_alloc(s)
-      }
+      case "assign" => stmt = new Stmt_assign(s)
+      case "load" => stmt = new Stmt_load(s)
+      case "store" => stmt = new Stmt_store(s)
+      case "alloca" => stmt = new Stmt_alloc(s)
+      case "phi" => stmt = new Stmt_phi(s)
+      case "call" => stmt = new Stmt_call(s)
+      case "return" => stmt = new Stmt_return(s)
+      case "ret" => stmt = new Stmt_ret()
+//      case "block" => stmt = new Stmt_return(s)
+//      case "callfptr" => stmt = new Stmt_return(s)
+//      case "calleefptr" => stmt = new Stmt_return(s)
       case _ => {
-        println("wrong stmt type!!!")
+        println(stmt_type)
+        println("wrong stmt type in CfgNode!!!")
         System.exit(1)
       }
     }

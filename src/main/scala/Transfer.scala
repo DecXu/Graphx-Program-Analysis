@@ -10,16 +10,42 @@ class Transfer {
 }
 object Transfer{
 
-
-
-
-  def transfer(in: Pegraph, stmt: Stmt, grammar: Grammar, singleton: Singleton ) = {
+  def transfer(in: Pegraph, stmt: Stmt, grammar: Grammar, singletons: Singleton ) = {
     //System.out.println(stmt.asInstanceOf[Stmt_alloc] + "done!")
     stmt.getType() match{
-      case TYPE.Assign => transfer_copy(in, stmt.asInstanceOf[Stmt_assign], grammar, singleton)
-      case TYPE.Load => transfer_load(in, stmt.asInstanceOf[Stmt_load], grammar, singleton)
-      case TYPE.Store => transfer_store(in, stmt.asInstanceOf[Stmt_store], grammar, singleton)
-      case TYPE.Alloca => transfer_address(in, stmt.asInstanceOf[Stmt_alloc], grammar, singleton)
+      case TYPE.Assign => {
+        println(stmt.toString)
+        transfer_copy(in, stmt.asInstanceOf[Stmt_assign], grammar, singletons)
+      }
+      case TYPE.Load => {
+        println(stmt.toString)
+        transfer_load(in, stmt.asInstanceOf[Stmt_load], grammar, singletons)
+      }
+      case TYPE.Store => {
+        println(stmt.toString)
+        transfer_store(in, stmt.asInstanceOf[Stmt_store], grammar, singletons)
+      }
+      case TYPE.Alloca => {
+        println(stmt.toString)
+        transfer_address(in, stmt.asInstanceOf[Stmt_alloc], grammar, singletons)
+      }
+      case TYPE.Phi => {
+        println(stmt.toString)
+        //println(stmt.asInstanceOf[Stmt_phi].getLength())
+        transfer_phi(in, stmt.asInstanceOf[Stmt_phi], grammar, singletons)
+      }
+      case TYPE.Call => {
+        println(stmt.toString)
+        transfer_Call(in)
+      }
+      case TYPE.Return => {
+        println(stmt.toString)
+        transfer_Return(in)
+      }
+      case TYPE.Ret => {
+        println(stmt.toString)
+        transfer_Ret(in)
+      }
       case _ => {
         println("error stmt type for transfer function!")
         System.exit(2)
@@ -167,6 +193,27 @@ object Transfer{
     }
   }
 
+  def transfer_Ret(out: Pegraph) = out
+
+  def transfer_Return(out: Pegraph) = out
+
+  def transfer_Call(out: Pegraph) = out
+
+  def transfer_phi(out: Pegraph, stmt: Stmt_phi, grammar: Grammar, singletons: Singleton) = {
+    // the KILL set
+    //System.out.println(stmt.asInstanceOf[Stmt_alloc] + "done!")
+    val vertices_changed = mutable.Set.empty[VertexId]
+    val vertices_affected = mutable.Set.empty[VertexId]
+
+    //代测试！
+    strong_update_simplify(stmt.getDst(), out, vertices_changed, grammar, vertices_affected, singletons)
+
+    // the GEN set
+    //初步测试成功
+    peg_compute_add(out, stmt, grammar)
+    //println(out)
+  }
+
   def transfer_load(out: Pegraph, stmt: Stmt_load, grammar: Grammar, singletons: Singleton): Unit = {
     // the KILL set
     //System.out.println(stmt.asInstanceOf[Stmt_alloc] + "done!")
@@ -181,6 +228,7 @@ object Transfer{
     peg_compute_add(out, stmt, grammar)
     //println(out)
   }
+
   def transfer_store(out: Pegraph, stmt: Stmt_store, grammar: Grammar, singletons: Singleton): Unit = {
     // the KILL set
     val vertices_changed = mutable.Set.empty[VertexId]
@@ -247,8 +295,8 @@ object Transfer{
       if(deletedArray.getSize() != 0){
         val n1: Int = out.getNumEdges(src)
         val n2: Int = deletedArray.getSize()
-        val edges = new Array[Long](n1)
-        val labels = new Array[Byte](n2)
+        val edges = new Array[VertexId](n1)
+        val labels = new Array[Byte](n1)
         val len: Int = myalgo.minusTwoArray(edges, labels, n1, out.getEdges(src), out.getLabels(src), n2, deletedArray.getEdges(), deletedArray.getLabels())
         if(len != 0){
           out.setEdgeArray(src, len, edges, labels)
@@ -262,7 +310,38 @@ object Transfer{
 
   def getDirectAddedEdges_phi(out: Pegraph, stmt_tmp: Stmt, grammar: Grammar, m: mutable.Map[VertexId, EdgeArray2], bool: Boolean) = {
     val stmt = stmt_tmp.asInstanceOf[Stmt_phi]
+
+    //if (stmt.getDst() == 5371) println(out)
     //'a', '-a', 'd', '-d', and self-loop edges
+    val length = stmt.getLength()
+    val srcs = stmt.getSrcs()
+    val dst = stmt.getDst()
+    val edges_dst = new EdgeArray2()
+
+    for (i <- 0 until length){
+      val src = srcs(i)
+      val edges_src = new EdgeArray2()
+      //println("init_edges_src: " + edges_src.getSize())
+      //'a', '-a'
+      edges_src.addOneEdge(dst, grammar.getLabelValue(Array('a')))
+      edges_dst.addOneEdge(src, grammar.getLabelValue(Array('-','a')))
+
+      //println("edges_src: " + edges_src.getSize())
+
+      //if (stmt.getDst() == 5371){
+//        println(src)
+//        println("edges_src" + edges_src)
+//        println("edges_dst" + edges_dst)
+      //}
+      //merge and sort
+      //println("fen jie fen jie")
+      edges_src.merge()
+      //println("test!")
+
+      //remove the exiting edges
+      removeExistingEdges(edges_src, src, out ,m)
+
+    }
   }
 
   def removeExistingEdges(edges_src: EdgeArray2, src: VertexId, out: Pegraph, m: mutable.Map[VertexId, EdgeArray2]) = {
@@ -466,7 +545,7 @@ object Transfer{
       getDirectAddedEdges_assign(out, stmt_assign, grammar, m, flag)
     }
     else{
-      println("wrong stmt type!!!")
+      println("wrong stmt type!!!！")
       System.exit(3)
     }
   }
@@ -766,7 +845,8 @@ object Transfer{
     val isConservative = true
     val m = mutable.Map.empty[VertexId, EdgeArray2]
     if(stmt.getType() == TYPE.Phi){
-      println("need to implete getDirectAddedEdges_phi")
+      getDirectAddedEdges_phi(out, stmt, grammar, m, false)
+      //println("need to implete getDirectAddedEdges_phi")
 //      getDirectAddedEdges_phi(out, stmt, grammar, m, false)
     }
     else{
@@ -801,7 +881,6 @@ object Transfer{
         out.setEdgeArray(id, it._2.getSize(), it._2.getEdges(), it._2.getLabels())
       }
     }
-
   }
 
   def must_alias(x: VertexId, out: Pegraph, vertices_changed: mutable.Set[VertexId], grammar: Grammar, vertices_affected: mutable.Set[VertexId], singletons: Singleton): Unit = {
@@ -820,6 +899,7 @@ object Transfer{
     for(i <- 0 until numEdges){
       if(grammar.isMemoryAlias(labels(i))){
         val set2: mutable.Set[VertexId] = mutable.Set.empty[VertexId]
+
         val candidate: VertexId = edges(i)
         val numEdgess = out.getNumEdges(candidate)
         val edgess = out.getEdges(candidate)
@@ -841,6 +921,7 @@ object Transfer{
     //add *x into vertices as well
     for(it <- vertices_changed){
       val x: VertexId = it
+
       val numEdges: Int = out.getNumEdges(x)
       val edges: Array[VertexId] = out.getEdges(x)
       val labels: Array[Byte] = out.getLabels(x)

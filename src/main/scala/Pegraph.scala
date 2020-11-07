@@ -11,7 +11,8 @@ class Pegraph extends Serializable {
     graph.put(vertexId, new EdgeArray2)
   }
 
-  def isEquals(pegraph: Pegraph): Boolean = {
+  override def equals(obj: Any): Boolean = {
+    val pegraph = obj.asInstanceOf[Pegraph]
     if (graph.contains(-1l)) return false
     if (this eq pegraph) return true
     if (graph.size != pegraph.graph.size) return false
@@ -21,6 +22,16 @@ class Pegraph extends Serializable {
     }
     true
   }
+//  def isEquals(pegraph: Pegraph): Boolean = {
+//    if (graph.contains(-1l)) return false
+//    if (this eq pegraph) return true
+//    if (graph.size != pegraph.graph.size) return false
+//    for (key <- graph.keySet){
+//      if (!pegraph.graph.contains(key)) return false
+//      else if (graph(key).equals(pegraph.graph(key))) return false
+//    }
+//    true
+//  }
 
   def merge(prepegraph: Pegraph) = {
     val prepegraph_graph = prepegraph.getGraph()

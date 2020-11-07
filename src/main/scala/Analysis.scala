@@ -99,7 +99,7 @@ object Analysis
     //println(lines.mkString(","))
 //**************************HDFS*************************************
 
-    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/simple/entry.txt","UTF-8")
+    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/entry.txt","UTF-8")
     //val source_entry =  Source.fromFile(path_entry)
     val lines_entry = source_entry.getLines()
     val entry = mutable.Set[Long]()
@@ -110,7 +110,7 @@ object Analysis
     }
     val entries = sc.broadcast(entry)
 
-    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/simple/final","UTF-8")
+    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/final","UTF-8")
     //val sourceE =  Source.fromFile(path_final)
     val linesE = sourceE.getLines()
     while(linesE.hasNext)
@@ -120,7 +120,7 @@ object Analysis
     }
 
     //val sourceV =  Source.fromFile(path_stmt)
-    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/simple/id_stmt_info.txt","UTF-8")
+    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/id_stmt_info.txt","UTF-8")
     val linesV = sourceV.getLines
     while(linesV.hasNext)
     {
@@ -139,11 +139,11 @@ object Analysis
     val relationships: RDD[Edge[Byte]] = sc.parallelize(edgeArr)
     //StorageLevel.MEMORY_ONLY MEMORY_AND_DISK_SER
     val graph = Graph(stmts, relationships, null, StorageLevel.MEMORY_ONLY, StorageLevel.MEMORY_ONLY)
-      .partitionBy(RandomVertexCut,2)
+      .partitionBy(RandomVertexCut,1)
       .persist(StorageLevel.MEMORY_ONLY)
 
     //val sourceSingleton =  Source.fromFile(path_singleton)
-    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/simple/var_singleton_info.txt","UTF-8")
+    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/var_singleton_info.txt","UTF-8")
     val linesSingleton = sourceSingleton.getLines()
     var SingletonBuffer = new ArrayBuffer[Int]();
     var SingletonBuffer2 = new ArrayBuffer[VertexId]();
@@ -243,7 +243,11 @@ object Analysis
           //System.out.println(vData.stmt_type)
           //System.out.println(new CfgNode(vData.stmt_type).getStmt())
           //System.out.println("done!")
+          //println(vId)
           Transfer.transfer(in, new CfgNode(vData.stmt_type).getStmt(), grammar.value, singleton.value)
+          //print("in: ")
+          //println(in)
+          //println(in.getGraph()(7951).getSize())
           //TestJNI.transfer(vData.stmt_type, singletons.value, in)
           //System.out.println(test)
           //Tool.print(out);
@@ -284,7 +288,11 @@ object Analysis
         //第一次传入singleton后无需再进行传输
         //val test = TestJNI.transfer("", vData.stmt_type, in)
         //直接对in进行更新，也即是out
+        //println(vId)
+        //println("test!")
         Transfer.transfer(in, new CfgNode(vData.stmt_type).getStmt(), grammar.value, singleton.value)
+        //print("in: ")
+        //println(in)
         //TestJNI.transfer(vData.stmt_type, in)
         //var test = TestJNI.transfer(str.toString, vData.stmt_type, Singleton.value)
         //val out = new java.util.HashMap[java.lang.Long, EdgeArray]()
@@ -293,7 +301,7 @@ object Analysis
 
         var changed = false
         //changed = !Tool.isEquals(out, vData.pegraph)
-        changed = !out.isEquals(vData.pegraph)
+        changed = !out.equals(vData.pegraph)
         //changed = !Tools.isEquals(out, vData.pegraph)
 
         //println("old graphstore :" + changed + vData.graphstore.keySet())

@@ -1,7 +1,5 @@
 import org.apache.spark.graphx.VertexId
 
-import scala.reflect.ClassTag
-
 class EdgeArray2 extends Serializable {
 
   def this(size: Int, edges: Array[VertexId], labels: Array[Byte]){
@@ -44,7 +42,13 @@ class EdgeArray2 extends Serializable {
 
   def merge() = {
     // sort edges
+//    println(edges.size)
+//    println(edges(0))
+//    println(labels.size)
+//    println(labels(0))
+    //println(size)
     myalgo.quickSort(edges, labels, 0, size - 1)
+    //println("test!")
     //System.out.print(this)
     // remove duplicate edges
     val edges_tmp = new Array[VertexId](size)
