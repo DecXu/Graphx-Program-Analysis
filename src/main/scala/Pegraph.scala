@@ -18,7 +18,7 @@ class Pegraph extends Serializable {
     if (graph.size != pegraph.graph.size) return false
     for (key <- graph.keySet){
       if (!pegraph.graph.contains(key)) return false
-      else if (graph(key).equals(pegraph.graph(key))) return false
+      else if (!graph(key).equals(pegraph.graph(key))) return false
     }
     true
   }

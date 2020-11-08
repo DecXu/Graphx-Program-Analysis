@@ -14,36 +14,36 @@ object Transfer{
     //System.out.println(stmt.asInstanceOf[Stmt_alloc] + "done!")
     stmt.getType() match{
       case TYPE.Assign => {
-        println(stmt.toString)
+        //println(stmt.toString)
         transfer_copy(in, stmt.asInstanceOf[Stmt_assign], grammar, singletons)
       }
       case TYPE.Load => {
-        println(stmt.toString)
+        //println(stmt.toString)
         transfer_load(in, stmt.asInstanceOf[Stmt_load], grammar, singletons)
       }
       case TYPE.Store => {
-        println(stmt.toString)
+        //println(stmt.toString)
         transfer_store(in, stmt.asInstanceOf[Stmt_store], grammar, singletons)
       }
       case TYPE.Alloca => {
-        println(stmt.toString)
+        //println(stmt.toString)
         transfer_address(in, stmt.asInstanceOf[Stmt_alloc], grammar, singletons)
       }
       case TYPE.Phi => {
-        println(stmt.toString)
+        //println(stmt.toString)
         //println(stmt.asInstanceOf[Stmt_phi].getLength())
         transfer_phi(in, stmt.asInstanceOf[Stmt_phi], grammar, singletons)
       }
       case TYPE.Call => {
-        println(stmt.toString)
+        //println(stmt.toString)
         transfer_Call(in)
       }
       case TYPE.Return => {
-        println(stmt.toString)
+        //println(stmt.toString)
         transfer_Return(in)
       }
       case TYPE.Ret => {
-        println(stmt.toString)
+        //println(stmt.toString)
         transfer_Ret(in)
       }
       case _ => {
@@ -229,16 +229,145 @@ object Transfer{
     //println(out)
   }
 
+  def is_strong_update_dst(x: VertexId, out: Pegraph, grammar: Grammar, singletons: Singleton): Boolean = {
+    /* If there exists one and only one variable o,which
+     * refers to a singleton memory location,such that x and o are memory alias
+     */
+    assert(out.getGraph().contains(x))
+    var numOfSingleTon = 0
+    val numEdges = out.getNumEdges(x)
+    val edges = out.getEdges(x)
+    val labels = out.getLabels(x)
+
+    for (i <- 0 until numEdges){
+      if(grammar.isMemoryAlias(labels(i)) && singletons.isSingleton(edges(i)))  numOfSingleTon += 1
+    }
+
+    numOfSingleTon == 1
+//    int numOfSingleTon = 0;
+//    int numEdges = out->getNumEdges(x);
+//    vertexid_t * edges = out->getEdges(x);
+//    label_t *labels = out->getLabels(x);
+//
+//    for(int i = 0;i < numEdges;++i) {
+//      if(grammar->isMemoryAlias(labels[i]) && singletons->isSingleton(edges[i]))
+//        ++numOfSingleTon;
+//    }
+//
+//    //for debugging
+//    Logger::print_thread_info_locked("is-strong-update finished.\n", LEVEL_LOG_FUNCTION);
+//
+//    return (numOfSingleTon == 1);
+
+
+  }
+
+  def must_alias_store_dst(x: VertexId, out: Pegraph, vertices_changed: mutable.Set[VertexId], grammar: Grammar, vertices_affected: mutable.Set[VertexId], singletons: Singleton) = {
+    /* if there exists one and only one variable o,which
+	 * refers to a singleton memory location,such that x and
+	 * y are both memory aliases of o,then x and y are Must-alias
+	 */
+
+    val set1 = mutable.Set.empty[VertexId]
+    assert(!singletons.isSingleton(x))
+
+    {
+      val numEdges = out.getNumEdges(x)
+      val edges = out.getEdges(x)
+      val labels = out.getLabels(x)
+
+      for (i <- 0 until numEdges){
+        if (grammar.isMemoryAlias(labels(i)) && singletons.isSingleton((edges(i)))){
+          set1 += edges(i)
+        }
+      }
+    }
+
+    assert(set1.size == 1)
+
+    //compute all the must-alias expressions
+    val numEdges = out.getNumEdges(x)
+    val edges = out.getEdges(x)
+    val labels = out.getLabels(x)
+
+    for (i <- 0 until numEdges){
+      if (grammar.isMemoryAlias(labels(i))){
+        val set2 = mutable.Set.empty[VertexId]
+
+        val candidate = edges(i)
+        val numEdgess = out.getNumEdges(candidate)
+        val edgess = out.getEdges(candidate)
+        val labelss = out.getLabels(candidate)
+
+        for (i <- 0 until numEdgess){
+          if (grammar.isMemoryAlias(labels(i)) && singletons.isSingleton(edges(i))){
+            set2 += edgess(i)
+          }
+        }
+
+        if (set2.size == 1 && set2(0) == set1(0)) vertices_changed += candidate
+      }
+    }
+    vertices_changed += x
+
+    //add *x into vertices as well
+    for (it <- vertices_changed){
+      val x = it
+
+      val numEdges = out.getNumEdges(x)
+      val edges = out.getEdges(x)
+      val labels = out.getLabels(x)
+
+      for (i <- 0 until numEdges){
+        if (grammar.isDereference(labels(i))){
+          vertices_changed += edges(i)
+        }
+
+        if (grammar.isDereference_reverse(labels(i))){
+          vertices_affected += edges(i)
+        }
+      }
+    }
+  }
+
+  def strong_update_store_dst_simplify(x: VertexId, out: Pegraph, vertices_changed: mutable.Set[VertexId], grammar: Grammar, vertices_affected: mutable.Set[VertexId], singletons: Singleton) = {
+    // vertices <- must_alias(x); put *x into this set as well
+    must_alias_store_dst(x, out, vertices_changed, grammar, vertices_affected, singletons)
+
+    /* remove edges */
+    for (it <- out.getGraph() if !it._2.isEmpty()){
+      val src = it._1
+      /* delete all the ('a', '-a', 'V', 'M', and other temp labels) edges associated with a vertex within vertices_changed, and
+       * all the ('V', 'M', and other temp labels) edges associated with that within vertices_affected
+       * */
+      val deletedArray = new EdgeArray2()
+      findDeletedEdges(it._2, src, vertices_changed, vertices_affected, grammar, deletedArray)
+//      		//for debugging
+//      		if(deletedArray.getSize() != 0){
+//            println(deletedArray)
+//      		}
+      if(deletedArray.getSize() != 0){
+        val n1 = out.getNumEdges(src)
+        val n2 = deletedArray.getSize()
+        val edges = new Array[VertexId](n1)
+        val labels = new Array[Byte](n1)
+        val len = myalgo.minusTwoArray(edges, labels, n1, out.getEdges(src), out.getLabels(src), n2, deletedArray.getEdges(), deletedArray.getLabels())
+        if (len != 0) out.setEdgeArray(src,len,edges,labels)
+        else out.getGraph() -= it._1
+      }
+    }
+  }
+
   def transfer_store(out: Pegraph, stmt: Stmt_store, grammar: Grammar, singletons: Singleton): Unit = {
     // the KILL set
     val vertices_changed = mutable.Set.empty[VertexId]
     val vertices_affected = mutable.Set.empty[VertexId]
 
     if(out.getGraph().contains(stmt.getDst())){
-//      if(is_strong_update_dst(stmt.getDst(), out, grammar, singleton)){
-//        strong_update_store_dst_simplify(stmt.getDst(),out, vertices_changed, grammar, vertices_affected, singleton)
-//      }
-      println("need is_strong_update_dst")
+      if(is_strong_update_dst(stmt.getDst(), out, grammar, singletons)){
+        strong_update_store_dst_simplify(stmt.getDst(),out, vertices_changed, grammar, vertices_affected, singletons)
+      }
+      //println("need is_strong_update_dst")
     }
     else{
       if(is_strong_update_aux(stmt.getAux(), out, grammar, singletons)){

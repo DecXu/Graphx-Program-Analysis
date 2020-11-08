@@ -209,8 +209,10 @@ object Analysis
     //flag.put(-1l, null)
     //val firstMessage: java.util.HashMap[java.lang.Long, java.util.HashMap[java.lang.Long, EdgeArray]] = flag
 
-    val iterations = 3000
+    val iterations = 15
     val edgeDirection = EdgeDirection.Out
+    //val entry_sum = sc.accumulator(0)
+
 
     //注意要判断changed，以及处理entry
     val updateVertex = (vId: Long, vData: StmtValue2, msgSum: mutable.HashMap[VertexId, Pegraph]) =>
@@ -223,8 +225,9 @@ object Analysis
       val in =  new Pegraph
       val out = in
 
-
-      if(msgSum.isEmpty) //实现取决于没有空消息！！！！！！！！！！！！！！！！！！！！！！！！！！
+      //现取决于没有空消息！！！！！！！！！！！！！！！！！！！！！！！！！！
+      //空消息表示目前的循环是第一轮
+      if(msgSum.isEmpty)
       //if(msgSum.containsKey(-1l))
       {
         //println(singleton.value.isSingleton(2020))
@@ -233,7 +236,8 @@ object Analysis
         if(entries.value.contains(vId))//第一波判断后，不再考虑entry的相关内容
         {
           //Tool.getin(in, vData.graphstore)
-          Tools.getIn(in, vData.graphstore)
+          //Tools.getIn(in, vData.graphstore)
+          //entry_sum += 1
           //val str = new java.lang.StringBuilder
             //将in转化为string
           //Tool.changetoString(str, in)
@@ -244,29 +248,26 @@ object Analysis
           //System.out.println(new CfgNode(vData.stmt_type).getStmt())
           //System.out.println("done!")
           //println(vId)
-          Transfer.transfer(in, new CfgNode(vData.stmt_type).getStmt(), grammar.value, singleton.value)
           //print("in: ")
           //println(in)
           //println(in.getGraph()(7951).getSize())
           //TestJNI.transfer(vData.stmt_type, singletons.value, in)
           //System.out.println(test)
           //Tool.print(out);
-
           //val str = new java.lang.StringBuilder
           //Tool.changetoString(str, out)
           //System.out.println(str.toString)
             //将test转化为out
           //Tool.changetoMap(out, test)
           //Tool.print(out);
-
-
           //var changed = false
           //changed = !Tool.isEquals(out, vData.pegraph)
-
           //println("old graphstore :" + changed + vData.graphstore.keySet())
-          //第一次必定改变了，即change为true
           //val vData2 = StmtValue(vData.stmt_type, true, out, vData.graphstore)
           //vData2
+
+          Transfer.transfer(in, new CfgNode(vData.stmt_type).getStmt(), grammar.value, singleton.value)
+          //第一次必定改变了，即change为true
           StmtValue2(vData.stmt_type, true, out, vData.graphstore)
         }
         else
@@ -321,6 +322,7 @@ object Analysis
       //{
         if(triplet.srcAttr.changed)
         {
+          //println("send message!" + triplet.srcAttr.stmt_type)
           //如果changed，需要发送满足消息结构的（java.util.HashMap[Long, PEgraph]）包含pegraph的内容
           //深拷贝
           //val tmp = new java.util.HashMap[java.lang.Long, java.util.HashMap[java.lang.Long, EdgeArray]]()
