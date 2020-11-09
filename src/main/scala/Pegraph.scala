@@ -13,7 +13,7 @@ class Pegraph extends Serializable {
 
   override def equals(obj: Any): Boolean = {
     val pegraph = obj.asInstanceOf[Pegraph]
-    if (graph.contains(-1l)) return false
+    if (graph.contains(-2l)) return false
     if (this eq pegraph) return true
     if (graph.size != pegraph.graph.size) return false
     for (key <- graph.keySet){

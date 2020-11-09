@@ -234,6 +234,7 @@ object Transfer{
      * refers to a singleton memory location,such that x and o are memory alias
      */
     assert(out.getGraph().contains(x))
+
     var numOfSingleTon = 0
     val numEdges = out.getNumEdges(x)
     val edges = out.getEdges(x)
@@ -244,21 +245,6 @@ object Transfer{
     }
 
     numOfSingleTon == 1
-//    int numOfSingleTon = 0;
-//    int numEdges = out->getNumEdges(x);
-//    vertexid_t * edges = out->getEdges(x);
-//    label_t *labels = out->getLabels(x);
-//
-//    for(int i = 0;i < numEdges;++i) {
-//      if(grammar->isMemoryAlias(labels[i]) && singletons->isSingleton(edges[i]))
-//        ++numOfSingleTon;
-//    }
-//
-//    //for debugging
-//    Logger::print_thread_info_locked("is-strong-update finished.\n", LEVEL_LOG_FUNCTION);
-//
-//    return (numOfSingleTon == 1);
-
 
   }
 
@@ -300,7 +286,7 @@ object Transfer{
         val labelss = out.getLabels(candidate)
 
         for (i <- 0 until numEdgess){
-          if (grammar.isMemoryAlias(labels(i)) && singletons.isSingleton(edges(i))){
+          if (grammar.isMemoryAlias(labelss(i)) && singletons.isSingleton(edgess(i))){
             set2 += edgess(i)
           }
         }
@@ -365,6 +351,7 @@ object Transfer{
 
     if(out.getGraph().contains(stmt.getDst())){
       if(is_strong_update_dst(stmt.getDst(), out, grammar, singletons)){
+
         strong_update_store_dst_simplify(stmt.getDst(),out, vertices_changed, grammar, vertices_affected, singletons)
       }
       //println("need is_strong_update_dst")

@@ -17,6 +17,7 @@ class EdgeArray2 extends Serializable {
   //override def equals(obj: Any): Boolean = super.equals(obj)
   override def equals(obj: Any): Boolean = {
     val other = obj.asInstanceOf[EdgeArray2]
+    if (other == null) return false
     if (this eq other) return true
     if (this.size != other.size) return false
     for (i <- 0 until this.size){
