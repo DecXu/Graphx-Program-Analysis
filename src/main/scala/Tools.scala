@@ -5,7 +5,9 @@ import scala.collection.mutable
 object Tools {
   def sum_edge(k: Pegraph): Int = {
     var sum = 0
-    for (tmp <- k.getGraph().keySet) sum += k.getGraph()(tmp).getSize
+    for (tmp <- k.getGraph().values){
+      sum += tmp.getSize()
+    }
     sum
   }
 

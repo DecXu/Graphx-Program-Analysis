@@ -159,7 +159,6 @@ object myalgo {
         while(p1 < len1 && p2 < len2){
           val value: Long = myCompare(A1(p1),B1(p1),A2(p2),B2(p2))
           if(value > 0){
-            //println("done!")
             dstA(len) = A2(p2)
             dstB(len) = B2(p2)
             p2 += 1
@@ -191,16 +190,15 @@ object myalgo {
           p2 += 1
           len += 1
         }
-
       }
-      else{
+      else {
         len = len1
         Array.copy(A1, 0, dstA, 0, len)
         Array.copy(B1, 0, dstB, 0, len)
       }
     }
-    else{
-      if(len2 != 0){
+    else {
+      if (len2 != 0){
         len = len2
         Array.copy(A2, 0, dstA, 0, len)
         Array.copy(B2, 0, dstB, 0, len)

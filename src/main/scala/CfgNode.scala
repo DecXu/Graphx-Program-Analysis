@@ -3,6 +3,7 @@ import java.util.Scanner
 import stmt.TYPE.TYPE
 import stmt.{Stmt_assign, _}
 
+// 类似于一个工厂方法
 class CfgNode {
   private var stmt: Stmt = null
 

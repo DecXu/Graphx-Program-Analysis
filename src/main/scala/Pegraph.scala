@@ -42,15 +42,11 @@ class Pegraph extends Serializable {
       }
       else {
         val n1 = prepegraph_graph(key).getSize
-        val n2 = graph(key).getSize
+        val n2 = this.getNumEdges(key)
         val edges_tmp = new Array[VertexId](n1 + n2)
         val labels_tmp = new Array[Byte](n1 + n2)
-        //val in_array = graph(key)
-        //val prepegraph_array = prepegraph_graph.get(key)
         val size = myalgo.unionTwoArray(edges_tmp, labels_tmp, n1, prepegraph_graph(key).getEdges(), prepegraph_graph(key).getLabels(), n2, this.getEdges(key), this.getLabels(key))
-        val result = new EdgeArray2(size, edges_tmp, labels_tmp)
-        graph += (key -> result)
-        //graph.put(key, result)
+        graph(key).set(size, edges_tmp, labels_tmp)
       }
     }
   }

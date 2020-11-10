@@ -205,9 +205,7 @@ object Transfer{
     val vertices_changed = mutable.Set.empty[VertexId]
     val vertices_affected = mutable.Set.empty[VertexId]
 
-    //代测试！
     strong_update_simplify(stmt.getDst(), out, vertices_changed, grammar, vertices_affected, singletons)
-
     // the GEN set
     //初步测试成功
     peg_compute_add(out, stmt, grammar)
@@ -424,7 +422,7 @@ object Transfer{
     }
   }
 
-  def getDirectAddedEdges_phi(out: Pegraph, stmt_tmp: Stmt, grammar: Grammar, m: mutable.Map[VertexId, EdgeArray2], bool: Boolean) = {
+  def getDirectAddedEdges_phi(out: Pegraph, stmt_tmp: Stmt, grammar: Grammar, m: mutable.Map[VertexId, EdgeArray2], flag: Boolean) = {
     val stmt = stmt_tmp.asInstanceOf[Stmt_phi]
 
     //if (stmt.getDst() == 5371) println(out)
@@ -458,6 +456,16 @@ object Transfer{
       removeExistingEdges(edges_src, src, out ,m)
 
     }
+
+    if (!flag){
+      for (i <- 0 until grammar.getNumErules()){
+        val label = grammar.getErule(i)
+        edges_dst.addOneEdge(dst, label)
+      }
+    }
+
+    edges_dst.merge()
+    removeExistingEdges(edges_dst, dst, out, m)
   }
 
   def removeExistingEdges(edges_src: EdgeArray2, src: VertexId, out: Pegraph, m: mutable.Map[VertexId, EdgeArray2]) = {

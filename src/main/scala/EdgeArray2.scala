@@ -99,6 +99,7 @@ class EdgeArray2 extends Serializable {
     size += 1
   }
   //与C++部分有所不同（不需要处理垃圾回收），之后再进行检查。
+  //这是一个深拷贝
   def set(size: Int, edges: Array[VertexId], labels: Array[Byte]): Unit = {
     if(size == 0) return
     this.size = size

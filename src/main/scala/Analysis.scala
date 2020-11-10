@@ -21,18 +21,14 @@ object Analysis
     Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
 
     val startTime1 = System.currentTimeMillis
-    /******
-     *
-     * @param stmt_type : stmt's info
-//     * @param flag : about entry
-//     * @param label : 0 is null for pegraph
-     * @param changed : about send Msg or do not send Msg
-     * @param pegraph : vertex property
-     * @param graphstore : previous in set
-     */
 
-    //case class StmtValue(stmt_type: String, changed: Boolean, pegraph: java.util.HashMap[java.lang.Long, EdgeArray], graphstore: java.util.HashMap[java.lang.Long, java.util.HashMap[java.lang.Long, EdgeArray]])
-    case class StmtValue2(stmt_type: String, changed: Boolean, pegraph: Pegraph, graphstore: mutable.Map[VertexId, Pegraph])
+    /**
+     * @param stmt : 节点所代表的语句信息
+     * @param changed : 表达节点在transfer计算完成后，pegraph信息是否发生变化
+     * @param pegraph : 节点pegraph的当前信息
+     * @param graphstore : 节点的in集合，保存前置节点的pegraph信息
+     */
+    case class VertexValue(stmt: String, changed: Boolean, pegraph: Pegraph, graphstore: mutable.Map[VertexId, Pegraph])
 
     //开启Kryo的压缩
     val conf = new SparkConf()
@@ -41,22 +37,17 @@ object Analysis
     //  .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .setMaster("local")
     //  .set("spark.kryo.registrationRequired", "true")
-    //  .registerKryoClasses(Array(classOf[StmtValue]
+    //  .registerKryoClasses(Array(classOf[VertexValue]
     //    ,classOf[java.util.HashMap[java.lang.Long, java.util.HashMap[java.lang.Long, EdgeArray]]]
     //    ,classOf[Array[Edge[_]]]))
-
-       // ,classOf[org.apache.spark.graphx.Edge$mcI$sp]]))
-
+    //    ,classOf[org.apache.spark.graphx.Edge$mcI$sp]]))
     val sc = new SparkContext(conf)
 
-    //StmtValue： StmtValue is the type of each vertex's property
-    val vertexArr = new ArrayBuffer[(VertexId, StmtValue2)]()
-    //Edge[Int]: Int is the type of each edge's property
+    //VertexValue： VertexValue是节点属性的类型
+    val vertexArr = new ArrayBuffer[(VertexId, VertexValue)]()
+    //Edge[Byte]: Byte是边属性的类型
     val edgeArr = new ArrayBuffer[Edge[Byte]]()
 
-    //sc.textFile(): Read a text file from HDFS, a local file system (available on all nodes), or any Hadoop-supported file system URI, and return it as an RDD of Strings.
-    //val varbs = sc.textFile("file:///home/decxu/analysis_data/browser/final").collect()
-    //varbs.foreach(print)
 //**************************HDFS*************************************
   /*  val file_start = "hdfs://slave201:9000/analysis/start"
     sc.addFile(file_start)
@@ -95,12 +86,14 @@ object Analysis
     val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/mfbt/entry.txt","UTF-8")
     //val source_entry =  Source.fromFile(path_entry)
     val lines_entry = source_entry.getLines()
+    //entry包含所有cfg入口点
     val entry = mutable.Set[Long]()
     while(lines_entry.hasNext)
     {
       val en = lines_entry.next().toLong
       entry.add(en)
     }
+    //entries是entry的广播变量
     val entries = sc.broadcast(entry)
 
     val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/mfbt/final","UTF-8")
@@ -119,31 +112,19 @@ object Analysis
     {
       val pp = linesV.next()
       val id = pp.split("\t")(0).toLong
-
-
-      //put -2l 表示初始状态
-      vertexArr += ((id, StmtValue2(pp, false, new Pegraph(-2l), new mutable.HashMap[VertexId, Pegraph]())))
-
+      //-2l表示初始状态
+      vertexArr += ((id, VertexValue(pp, false, new Pegraph(-2l), new mutable.HashMap[VertexId, Pegraph]())))
     }
-
-    val stmts: RDD[(VertexId, StmtValue2)] = sc.parallelize(vertexArr)
-    val relationships: RDD[Edge[Byte]] = sc.parallelize(edgeArr)
-    //StorageLevel.MEMORY_ONLY MEMORY_AND_DISK_SER
-    val graph = Graph(stmts, relationships, null, StorageLevel.MEMORY_ONLY, StorageLevel.MEMORY_ONLY)
-      .partitionBy(RandomVertexCut,1)
-      .persist(StorageLevel.MEMORY_ONLY)
 
     //val sourceSingleton =  Source.fromFile(path_singleton)
     val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/mfbt/var_singleton_info.txt","UTF-8")
     val linesSingleton = sourceSingleton.getLines()
-
-    var SingletonBuffer2 = new ArrayBuffer[VertexId]()
+    var SingletonBuffer = new ArrayBuffer[VertexId]()
     while(linesSingleton.hasNext) {
-      val ss = linesSingleton.next()
-      SingletonBuffer2 += ss.toLong
+      val s = linesSingleton.next()
+      SingletonBuffer += s.toLong
     }
-
-    val singleton = sc.broadcast(new Singleton(SingletonBuffer2.toSet))
+    val singleton = sc.broadcast(new Singleton(SingletonBuffer.toSet))
 
     val sourceG = Source.fromFile("/home/decxu/Documents/analysis_data/simple/rules_pointsto.txt","UTF-8")
     val linesG = sourceG.getLines()
@@ -155,47 +136,65 @@ object Analysis
     grammars.test()
     val grammar = sc.broadcast(grammars)
 
+    val vertices: RDD[(VertexId, VertexValue)] = sc.parallelize(vertexArr)
+    val edges: RDD[Edge[Byte]] = sc.parallelize(edgeArr)
+
+    //StorageLevel.MEMORY_ONLY MEMORY_AND_DISK_SER
+    val graph = Graph(vertices, edges, null, StorageLevel.MEMORY_ONLY, StorageLevel.MEMORY_ONLY)
+      .partitionBy(RandomVertexCut,1)
+      .persist(StorageLevel.MEMORY_ONLY)
+
     val startTime2 = System.currentTimeMillis
 
-    val firstMessage = new mutable.HashMap[VertexId, Pegraph]()
-
-    val iterations = 10
+    //-------------------------------------定义pregel处理逻辑-------------------------------------------------------------
+    val sum_cishu = sc.accumulator(0)
+    //pregel的迭代次数，要求大于等于1。次数为1表示节点处理完firstMessage信息后，在进行一次迭代计算
+    val iterations = 12
+    //表示节点信息的发送方向
     val edgeDirection = EdgeDirection.Out
-
-    //注意要判断changed，以及处理entry
-    val updateVertex = (vId: Long, vData: StmtValue2, msgSum: mutable.HashMap[VertexId, Pegraph]) =>
+    //所有节点初始时收到的消息
+    val firstMessage = new mutable.HashMap[VertexId, Pegraph]()
+    //每个节点对收到的消息的处理逻辑
+    /***
+     * vId： 当前节点的编号
+     * vertexvalue： 当前节点的属性值
+     * msgSum： 当前节点受到的消息集合
+     */
+    val updateVertex = (vId: Long, vertexValue: VertexValue, msgSum: mutable.HashMap[VertexId, Pegraph]) =>
     {
       val in =  new Pegraph
       val out = in
 
-      //现取决于没有空消息！！！！！！！！！！！！！！！！！！！！！！！！！！
-      //空消息表示目前的循环是第一轮
+      // 空消息表示处理的是firstMessage
       if(msgSum.isEmpty)
       {
-        if(entries.value.contains(vId))//第一波判断后，不再考虑entry的相关内容
+        // 判断是否为cfg的入口点
+        if(entries.value.contains(vId))
         {
-          Transfer.transfer(in, new CfgNode(vData.stmt_type).getStmt(), grammar.value, singleton.value)
-          //第一次必定改变了，即change为true
+          Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
+
           var changed = false
 
-          changed = !out.equals(vData.pegraph)
+          changed = !out.equals(vertexValue.pegraph)
 
-          StmtValue2(vData.stmt_type, changed, out, vData.graphstore)
+          VertexValue(vertexValue.stmt, changed, out, vertexValue.graphstore)
         }
         else
-        vData
+        vertexValue
       }
-      //同时，如果out有变化，将changed赋值为true
+      //
       else
       {
-        Tools.update_graphstore(vData.graphstore, msgSum)
+        sum_cishu += 1
+        Tools.update_graphstore(vertexValue.graphstore, msgSum)
 
-        Tools.getIn(in, vData.graphstore)
-        Transfer.transfer(in, new CfgNode(vData.stmt_type).getStmt(), grammar.value, singleton.value)
+        Tools.getIn(in, vertexValue.graphstore)
+
+        Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
         var changed = false
-        //changed = !Tool.isEquals(out, vData.pegraph)
-        changed = !out.equals(vData.pegraph)
-        StmtValue2(vData.stmt_type, changed, out, vData.graphstore)
+        //changed = !Tool.isEquals(out, vertexvalue.pegraph)
+        changed = !out.equals(vertexValue.pegraph)
+        VertexValue(vertexValue.stmt, changed, out, vertexValue.graphstore)
       }
     }
 
@@ -204,12 +203,12 @@ object Analysis
      * a user supplied function that is applied to out edges of vertices that received messages in the current iteration
      * sendMsg: EdgeTriplet[VD, ED] => Iterator[(VertexId,A)]
      *****************************/
-    val sendMsg = (triplet: EdgeTriplet[StmtValue2, Byte]) =>
+    val sendMsg = (triplet: EdgeTriplet[VertexValue, Byte]) =>
     {
       // 需要额外处理
-      if(triplet.srcAttr.changed && !(triplet.dstAttr.stmt_type.contains("return") &&
-          new CfgNode(triplet.dstAttr.stmt_type).getStmt().asInstanceOf[Stmt_return].getLength() == 0 &&
-          triplet.srcAttr.stmt_type.contains("call")))
+      if(triplet.srcAttr.changed && !(triplet.dstAttr.stmt.contains("return") &&
+          new CfgNode(triplet.dstAttr.stmt).getStmt().asInstanceOf[Stmt_return].getLength() == 0 &&
+          triplet.srcAttr.stmt.contains("call")))
         {
           val tmp = new mutable.HashMap[VertexId, Pegraph]()
           tmp.put(triplet.srcId, triplet.srcAttr.pegraph)
@@ -228,29 +227,25 @@ object Analysis
       messagestore1
     }
 
-    //start superstep
+    //开始pregel的计算任务
     val resultGraph = graph.pregel(firstMessage, iterations, edgeDirection)(updateVertex, sendMsg, aggregateMsgs)
 
     val endTime = System.currentTimeMillis()
-    //println("sum_cishu: " + sum_cishu)
+
     println("total time:" + (endTime - startTime1))
     println("total time(no construct):" + (endTime - startTime2))
+
     val sum = sc.accumulator(0)
     resultGraph.vertices.foreach
     { case (id, stmt) =>
       {
         val k = stmt.pegraph
-        //if (k.getEdges != 0){
-          //println(id)
-          //println(k)
-        //}
         sum += Tools.sum_edge(k)
-        //println("id:" + id + " edge num: " + Tool.sum_edge(k))
+        //println("id:" + id + " edge num: " + Tools.sum_edge(k))
       }
     }
     println(sum)
-    //println("edges NumPartitions: " + graph.edges.getNumPartitions)
-    //println("vertex NumPartitions: " + graph.vertices.getNumPartitions)
+    println(sum_cishu)
   }
 
 }
