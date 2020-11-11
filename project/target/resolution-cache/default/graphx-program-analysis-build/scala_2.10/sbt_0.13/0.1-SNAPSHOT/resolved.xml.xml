@@ -4,7 +4,7 @@
 		module="graphx-program-analysis-build"
 		revision="0.1-SNAPSHOT"
 		status="integration"
-		publication="20201109110950"
+		publication="20201110230516"
 		e:sbtVersion="0.13" e:scalaVersion="2.10"
 	>
 		<description>

@@ -5,9 +5,6 @@ import util.control.Breaks._
 
 import scala.collection.mutable
 
-class Transfer {
-
-}
 object Transfer{
 
   def transfer(in: Pegraph, stmt: Stmt, grammar: Grammar, singletons: Singleton ) = {
@@ -45,6 +42,18 @@ object Transfer{
       case TYPE.Ret => {
         //println(stmt.toString)
         transfer_Ret(in)
+      }
+      case TYPE.Calleefptr => {
+        //println(stmt.toString)
+        transfer_Calleefptr(in)
+      }
+      case TYPE.Callfptr => {
+        //println(stmt.toString)
+        transfer_Callfptr(in)
+      }
+      case TYPE.Skip => {
+        //println(stmt.toString)
+        transfer_Skip(in)
       }
       case _ => {
         println("error stmt type for transfer function!")
@@ -198,6 +207,12 @@ object Transfer{
   def transfer_Return(out: Pegraph) = out
 
   def transfer_Call(out: Pegraph) = out
+
+  def transfer_Calleefptr(out: Pegraph) = out
+
+  def transfer_Callfptr(out: Pegraph) = out
+
+  def transfer_Skip(out: Pegraph) = out
 
   def transfer_phi(out: Pegraph, stmt: Stmt_phi, grammar: Grammar, singletons: Singleton) = {
     // the KILL set

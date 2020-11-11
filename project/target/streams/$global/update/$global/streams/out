@@ -1,4 +1,4 @@
-[info] Updating {file:/home/decxu/MyProject/Graphx-Program-Analysis/project/}graphx-program-analysis-build...
+[info] Updating {file:/home/decxu/Documents/Graphx-Program-Analysis/project/}graphx-program-analysis-build...
 [debug] :: resolving dependencies :: default#graphx-program-analysis-build;0.1-SNAPSHOT
 [debug] 	confs: [compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom, scala-tool]
 [debug] 	validate = true
@@ -16,7 +16,7 @@
 [debug] == resolving dependencies for default#graphx-program-analysis-build;0.1-SNAPSHOT [provided]
 [debug] == resolving dependencies default#graphx-program-analysis-build;0.1-SNAPSHOT->org.scala-lang#scala-library;2.10.6 [provided->default(compile)]
 [info] Resolving org.scala-lang#scala-library;2.10.6 ...
-[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@5f442597
+[debug] sbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@23c52156
 [debug] sbt-chain: module revision found in cache: org.scala-lang#scala-library;2.10.6
 [debug] 	found org.scala-lang#scala-library;2.10.6 in sbt-chain
 [debug] 	[2.10.6] org.scala-lang#scala-library;2.10.6
@@ -2221,19 +2221,20 @@
 [debug] 	[NOT REQUIRED] org.scala-sbt#apply-macro;0.13.11!apply-macro.jar
 [debug] 	[NOT REQUIRED] org.scala-lang#jline;2.10.6!jline.jar
 [debug] 	[NOT REQUIRED] org.fusesource.jansi#jansi;1.4!jansi.jar
-[debug] :: resolution report :: resolve 1642ms :: artifacts dl 124ms
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT compile produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-compile.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT runtime produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-runtime.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT test produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-test.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT provided produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-provided.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT optional produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-optional.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT compile-internal produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-compile-internal.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT runtime-internal produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-runtime-internal.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT test-internal produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-test-internal.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT plugin produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-plugin.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT sources produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-sources.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT docs produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-docs.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT pom produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-pom.xml
-[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT scala-tool produced in /home/decxu/MyProject/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-scala-tool.xml
-[debug] 	resolve done (1642ms resolve - 124ms download)
+[debug] :: resolution report :: resolve 2363ms :: artifacts dl 48ms
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT compile produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-compile.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT runtime produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-runtime.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT test produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-test.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT provided produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-provided.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT optional produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-optional.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT compile-internal produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-compile-internal.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT runtime-internal produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-runtime-internal.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT test-internal produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-test-internal.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT plugin produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-plugin.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT sources produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-sources.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT docs produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-docs.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT pom produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-pom.xml
+[debug] 	report for default#graphx-program-analysis-build;0.1-SNAPSHOT scala-tool produced in /home/decxu/Documents/Graphx-Program-Analysis/project/target/resolution-cache/reports/default-graphx-program-analysis-build-scala-tool.xml
+[debug] 	resolve done (2363ms resolve - 48ms download)
 [info] Done updating.
+.

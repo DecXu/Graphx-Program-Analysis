@@ -1,8 +1,5 @@
 class Grammar extends Serializable
 {
-
-
-
   def getLabelValue(str: Array[Byte]): Byte = {
     for(i <- 0 until numRawLabels){
       if(rawlabel(i) sameElements str){
@@ -37,7 +34,6 @@ class Grammar extends Serializable
 
   @inline final def checkRules(edgeVal: Byte): Byte = rules(changeShort(127, edgeVal) + 32768) // find s-rule edges
   @inline final def checkRules(srcVal: Byte, dstVal: Byte): Byte = rules(changeShort(srcVal, dstVal) + 32768) // find s-rule edges
-
 
   def test(): Unit = {
     println("==========GRAMMER TEST START==========")
@@ -120,6 +116,11 @@ class Grammar extends Serializable
     raw sameElements Array('-','d')
   }
 
+  @inline final def isValueAlias(label: Byte): Boolean = {
+    val raw:Array[Byte] = this.getRawLabel(label)
+    raw sameElements Array('V')
+  }
+
   @inline final def getNumErules(): Int = numErules
 
   @inline final def getErule(index: Int): Byte = erules(index)
@@ -133,6 +134,7 @@ class Grammar extends Serializable
     val raw:Array[Byte] = this.getRawLabel(label)
     raw sameElements Array('P','t')
   }
+
   @inline final def isEruleLabel(label: Byte): Boolean = {
     for(i <- 0 until getNumErules()){
       if(label == getErule(i)){

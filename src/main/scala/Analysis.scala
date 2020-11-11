@@ -4,7 +4,7 @@ import org.apache.spark.{SparkConf, SparkContext, SparkFiles}
 import org.apache.spark.graphx.{VertexId, _}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import stmt.{Stmt_return, TYPE}
+import stmt.{Stmt, Stmt_calleefptr, Stmt_callfptr, Stmt_return, TYPE}
 
 import scala.io.Source
 import collection.mutable.ArrayBuffer
@@ -12,7 +12,6 @@ import scala.collection.mutable
 
 object Analysis
 {
-
   def main(args: Array[String]): Unit =
   {
     //记录运行时间
@@ -83,7 +82,7 @@ object Analysis
     //println(lines.mkString(","))
 //**************************HDFS*************************************
 
-    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/mfbt/entry.txt","UTF-8")
+    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/entry.txt","UTF-8")
     //val source_entry =  Source.fromFile(path_entry)
     val lines_entry = source_entry.getLines()
     //entry包含所有cfg入口点
@@ -96,7 +95,7 @@ object Analysis
     //entries是entry的广播变量
     val entries = sc.broadcast(entry)
 
-    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/mfbt/final","UTF-8")
+    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/final","UTF-8")
     //val sourceE =  Source.fromFile(path_final)
     val linesE = sourceE.getLines()
     while(linesE.hasNext)
@@ -106,7 +105,7 @@ object Analysis
     }
 
     //val sourceV =  Source.fromFile(path_stmt)
-    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/mfbt/id_stmt_info.txt","UTF-8")
+    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/id_stmt_info.txt","UTF-8")
     val linesV = sourceV.getLines
     while(linesV.hasNext)
     {
@@ -117,7 +116,7 @@ object Analysis
     }
 
     //val sourceSingleton =  Source.fromFile(path_singleton)
-    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/mfbt/var_singleton_info.txt","UTF-8")
+    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/var_singleton_info.txt","UTF-8")
     val linesSingleton = sourceSingleton.getLines()
     var SingletonBuffer = new ArrayBuffer[VertexId]()
     while(linesSingleton.hasNext) {
@@ -147,7 +146,6 @@ object Analysis
     val startTime2 = System.currentTimeMillis
 
     //-------------------------------------定义pregel处理逻辑-------------------------------------------------------------
-    val sum_cishu = sc.accumulator(0)
     //pregel的迭代次数，要求大于等于1。次数为1表示节点处理完firstMessage信息后，在进行一次迭代计算
     val iterations = 12
     //表示节点信息的发送方向
@@ -185,7 +183,6 @@ object Analysis
       //
       else
       {
-        sum_cishu += 1
         Tools.update_graphstore(vertexValue.graphstore, msgSum)
 
         Tools.getIn(in, vertexValue.graphstore)
@@ -198,26 +195,54 @@ object Analysis
       }
     }
 
+    def isFeasible(callee: Stmt, caller: Stmt, out: Pegraph, grammar: Grammar): Boolean = {
+      val caller_variable: VertexId = caller.asInstanceOf[Stmt_callfptr].getDst()
+      val caller_deref_variable: VertexId = caller.asInstanceOf[Stmt_callfptr].getAux()
 
+      val callee_variable: VertexId = callee.asInstanceOf[Stmt_calleefptr].getDst()
+      if (out.getGraph().contains(callee_variable)){
+        val num = out.getNumEdges(callee_variable)
+        val edges = out.getEdges(callee_variable)
+        val labels = out.getLabels(callee_variable)
+
+        for (i <- 0 until num){
+          if (edges(i) == caller_variable || edges(i) == caller_deref_variable){
+            if (grammar.isMemoryAlias(labels(i)) || grammar.isValueAlias(labels(i))){
+              return true
+            }
+          }
+        }
+      }
+      false
+    }
     /****************************
      * a user supplied function that is applied to out edges of vertices that received messages in the current iteration
      * sendMsg: EdgeTriplet[VD, ED] => Iterator[(VertexId,A)]
      *****************************/
     val sendMsg = (triplet: EdgeTriplet[VertexValue, Byte]) =>
     {
-      // 需要额外处理
-      if(triplet.srcAttr.changed && !(triplet.dstAttr.stmt.contains("return") &&
-          new CfgNode(triplet.dstAttr.stmt).getStmt().asInstanceOf[Stmt_return].getLength() == 0 &&
-          triplet.srcAttr.stmt.contains("call")))
-        {
-          val tmp = new mutable.HashMap[VertexId, Pegraph]()
+      val tmp = new mutable.HashMap[VertexId, Pegraph]()
+      if (triplet.srcAttr.changed && triplet.srcAttr.stmt.contains("callfptr")){
+        if (triplet.dstAttr.stmt.contains("calleefptr")){
+          if (isFeasible(new CfgNode(triplet.dstAttr.stmt).getStmt(), new CfgNode(triplet.srcAttr.stmt).getStmt(), triplet.srcAttr.pegraph, grammar.value)){
+            tmp.put(triplet.srcId, triplet.srcAttr.pegraph)
+            Iterator((triplet.dstId, tmp))
+          }
+          else Iterator.empty
+        }
+        else {
           tmp.put(triplet.srcId, triplet.srcAttr.pegraph)
           Iterator((triplet.dstId, tmp))
         }
-        else
-        {
-          Iterator.empty
-        }
+      }
+      else if(triplet.srcAttr.changed && !(triplet.dstAttr.stmt.contains("return") &&
+          new CfgNode(triplet.dstAttr.stmt).getStmt().asInstanceOf[Stmt_return].getLength() == 0 &&
+        (triplet.srcAttr.stmt.contains("call") || triplet.srcAttr.stmt.contains("callfptr")))) {
+        val tmp = new mutable.HashMap[VertexId, Pegraph]()
+        tmp.put(triplet.srcId, triplet.srcAttr.pegraph)
+        Iterator((triplet.dstId, tmp))
+      }
+      else Iterator.empty
     }
 
     //目标点聚合收到的消息
@@ -245,7 +270,6 @@ object Analysis
       }
     }
     println(sum)
-    println(sum_cishu)
   }
 
 }
