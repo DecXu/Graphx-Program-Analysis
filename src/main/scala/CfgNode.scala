@@ -10,7 +10,6 @@ class CfgNode {
   def this(line: String) = {
     this()
     val s: Scanner = new Scanner(line)
-    //val array = line.split('\t')
     s.next()
     val stmt_type = s.next()
     //println(stmt_type)

@@ -21,13 +21,14 @@ object Analysis
 
     val startTime1 = System.currentTimeMillis
 
+    type GraphStore = mutable.HashMap[VertexId, (String,Pegraph)]
     /**
      * @param stmt : 节点所代表的语句信息
      * @param changed : 表达节点在transfer计算完成后，pegraph信息是否发生变化
      * @param pegraph : 节点pegraph的当前信息
-     * @param graphstore : 节点的in集合，保存前置节点的pegraph信息
+     * @param graphstore : 节点的in集合，保存前置节点的类型信息和pegraph信息
      */
-    case class VertexValue(stmt: String, changed: Boolean, pegraph: Pegraph, graphstore: mutable.Map[VertexId, Pegraph])
+    case class VertexValue(stmt: String, changed: Boolean, pegraph: Pegraph, graphstore: GraphStore)
 
     //开启Kryo的压缩
     val conf = new SparkConf()
@@ -109,10 +110,10 @@ object Analysis
     val linesV = sourceV.getLines
     while(linesV.hasNext)
     {
-      val pp = linesV.next()
-      val id = pp.split("\t")(0).toLong
+      val stmt = linesV.next()
+      val id = stmt.split("\t")(0).toLong
       //-2l表示初始状态
-      vertexArr += ((id, VertexValue(pp, false, new Pegraph(-2l), new mutable.HashMap[VertexId, Pegraph]())))
+      vertexArr += ((id, VertexValue(stmt, false, new Pegraph(-2l), new GraphStore())))
     }
 
     //val sourceSingleton =  Source.fromFile(path_singleton)
@@ -151,18 +152,16 @@ object Analysis
     //表示节点信息的发送方向
     val edgeDirection = EdgeDirection.Out
     //所有节点初始时收到的消息
-    val firstMessage = new mutable.HashMap[VertexId, Pegraph]()
+    val firstMessage = new GraphStore()
     //每个节点对收到的消息的处理逻辑
     /***
      * vId： 当前节点的编号
      * vertexvalue： 当前节点的属性值
      * msgSum： 当前节点受到的消息集合
      */
-    val updateVertex = (vId: Long, vertexValue: VertexValue, msgSum: mutable.HashMap[VertexId, Pegraph]) =>
+    val updateVertex = (vId: Long, vertexValue: VertexValue, msgSum: GraphStore) =>
     {
-      val in =  new Pegraph
-      val out = in
-
+      var in: Pegraph = new Pegraph
       // 空消息表示处理的是firstMessage
       if(msgSum.isEmpty)
       {
@@ -170,6 +169,8 @@ object Analysis
         if(entries.value.contains(vId))
         {
           Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
+
+          val out = in
 
           var changed = false
 
@@ -185,9 +186,12 @@ object Analysis
       {
         Tools.update_graphstore(vertexValue.graphstore, msgSum)
 
-        Tools.getIn(in, vertexValue.graphstore)
+        in = Tools.getIn(vertexValue.graphstore, vertexValue.stmt, grammar.value)
 
         Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
+
+        val out = in
+
         var changed = false
         //changed = !Tool.isEquals(out, vertexvalue.pegraph)
         changed = !out.equals(vertexValue.pegraph)
@@ -221,32 +225,31 @@ object Analysis
      *****************************/
     val sendMsg = (triplet: EdgeTriplet[VertexValue, Byte]) =>
     {
-      val tmp = new mutable.HashMap[VertexId, Pegraph]()
+      val tmp = new GraphStore()
       if (triplet.srcAttr.changed && triplet.srcAttr.stmt.contains("callfptr")){
         if (triplet.dstAttr.stmt.contains("calleefptr")){
           if (isFeasible(new CfgNode(triplet.dstAttr.stmt).getStmt(), new CfgNode(triplet.srcAttr.stmt).getStmt(), triplet.srcAttr.pegraph, grammar.value)){
-            tmp.put(triplet.srcId, triplet.srcAttr.pegraph)
+            tmp.put(triplet.srcId, (triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
             Iterator((triplet.dstId, tmp))
           }
           else Iterator.empty
         }
         else {
-          tmp.put(triplet.srcId, triplet.srcAttr.pegraph)
+          tmp.put(triplet.srcId, (triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
           Iterator((triplet.dstId, tmp))
         }
       }
       else if(triplet.srcAttr.changed && !(triplet.dstAttr.stmt.contains("return") &&
           new CfgNode(triplet.dstAttr.stmt).getStmt().asInstanceOf[Stmt_return].getLength() == 0 &&
         (triplet.srcAttr.stmt.contains("call") || triplet.srcAttr.stmt.contains("callfptr")))) {
-        val tmp = new mutable.HashMap[VertexId, Pegraph]()
-        tmp.put(triplet.srcId, triplet.srcAttr.pegraph)
+        tmp.put(triplet.srcId, (triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
         Iterator((triplet.dstId, tmp))
       }
       else Iterator.empty
     }
 
     //目标点聚合收到的消息
-    val aggregateMsgs = (messagestore1: mutable.HashMap[VertexId, Pegraph], messagestore2: mutable.HashMap[VertexId, Pegraph]) =>
+    val aggregateMsgs = (messagestore1: GraphStore, messagestore2: GraphStore) =>
     {
       messagestore1 ++= messagestore2
       messagestore1

@@ -77,6 +77,9 @@ class Pegraph extends Serializable {
     this.graph(index).set(numEdges, edges, labels)
   }
 
+  def setEdgeArray(index: VertexId, array: EdgeArray2): Unit = this.graph(index) = array
+
+
   def print_graph_map(): String = {
     var str: String = ""
     var size: Int = 0
