@@ -21,12 +21,13 @@ object Analysis
 
     val startTime1 = System.currentTimeMillis
 
-    type GraphStore = mutable.HashMap[VertexId, (String,Pegraph)]
+    type GraphStore = mutable.HashMap[VertexId, (String, Pegraph)]
+    type Msg = mutable.HashMap[VertexId, (Boolean, String, Pegraph)]
     /**
      * @param stmt : 节点所代表的语句信息
      * @param changed : 表达节点在transfer计算完成后，pegraph信息是否发生变化
      * @param pegraph : 节点pegraph的当前信息
-     * @param graphstore : 节点的in集合，保存前置节点的类型信息和pegraph信息
+     * @param graphstore : 节点的in集合，保存前置节点的类型信息和pegraph信息,Boolean代表getin和updategraphstore的标志信息
      */
     case class VertexValue(stmt: String, changed: Boolean, pegraph: Pegraph, graphstore: GraphStore)
 
@@ -35,7 +36,7 @@ object Analysis
     //graphx.GraphXUtils.registerKryoClasses(conf)
     conf.setAppName("Analysis")
     //  .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-        .setMaster("local")
+        .setMaster("local[2]")
     //  .set("spark.kryo.registrationRequired", "true")
     //  .registerKryoClasses(Array(classOf[VertexValue]
     //    ,classOf[java.util.HashMap[java.lang.Long, java.util.HashMap[java.lang.Long, EdgeArray]]]
@@ -83,7 +84,7 @@ object Analysis
     //println(lines.mkString(","))
 //**************************HDFS*************************************
 
-    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/entry.txt","UTF-8")
+    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/browser/entry.txt","UTF-8")
     //val source_entry =  Source.fromFile(path_entry)
     val lines_entry = source_entry.getLines()
     //entry包含所有cfg入口点
@@ -96,7 +97,7 @@ object Analysis
     //entries是entry的广播变量
     val entries = sc.broadcast(entry)
 
-    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/final","UTF-8")
+    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/browser/final","UTF-8")
     //val sourceE =  Source.fromFile(path_final)
     val linesE = sourceE.getLines()
     while(linesE.hasNext)
@@ -106,7 +107,7 @@ object Analysis
     }
 
     //val sourceV =  Source.fromFile(path_stmt)
-    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/id_stmt_info.txt","UTF-8")
+    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/browser/id_stmt_info.txt","UTF-8")
     val linesV = sourceV.getLines
     while(linesV.hasNext)
     {
@@ -117,7 +118,7 @@ object Analysis
     }
 
     //val sourceSingleton =  Source.fromFile(path_singleton)
-    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/var_singleton_info.txt","UTF-8")
+    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/browser/var_singleton_info.txt","UTF-8")
     val linesSingleton = sourceSingleton.getLines()
     var SingletonBuffer = new ArrayBuffer[VertexId]()
     while(linesSingleton.hasNext) {
@@ -152,19 +153,18 @@ object Analysis
     //表示节点信息的发送方向
     val edgeDirection = EdgeDirection.Out
     //所有节点初始时收到的消息
-    val firstMessage = new GraphStore()
+    val firstMessage = new Msg()
     //每个节点对收到的消息的处理逻辑
     /***
      * vId： 当前节点的编号
      * vertexvalue： 当前节点的属性值
      * msgSum： 当前节点受到的消息集合
      */
-    val updateVertex = (vId: Long, vertexValue: VertexValue, msgSum: GraphStore) =>
+    val updateVertex = (vId: Long, vertexValue: VertexValue, msgSum: Msg) =>
     {
       var in: Pegraph = new Pegraph
       // 空消息表示处理的是firstMessage
-      if(msgSum.isEmpty)
-      {
+      if(msgSum.isEmpty) {
         // 判断是否为cfg的入口点
         if(entries.value.contains(vId))
         {
@@ -181,21 +181,51 @@ object Analysis
         else
         vertexValue
       }
-      //
       else
       {
-        Tools.update_graphstore(vertexValue.graphstore, msgSum)
+        if (msgSum.size == 1) {
+          var it: (VertexId, (Boolean, String, Pegraph)) = null
+          for (its <- msgSum) {
+            it = its
+          }
+            if (!it._2._1) {
+              val tmp = new Msg
+              tmp += it
+              Tools.update_graphstore(vertexValue.graphstore, tmp)
+              vertexValue
+            }
+            else {
+              Tools.update_graphstore(vertexValue.graphstore, msgSum)
 
-        in = Tools.getIn(vertexValue.graphstore, vertexValue.stmt, grammar.value)
+              in = Tools.getIn(vId, vertexValue.graphstore, vertexValue.stmt, grammar.value)
 
-        Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
+              Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
 
-        val out = in
+              val out = in
 
-        var changed = false
-        //changed = !Tool.isEquals(out, vertexvalue.pegraph)
-        changed = !out.equals(vertexValue.pegraph)
-        VertexValue(vertexValue.stmt, changed, out, vertexValue.graphstore)
+              var changed = false
+              //changed = !Tool.isEquals(out, vertexvalue.pegraph)
+              changed = !out.equals(vertexValue.pegraph)
+
+              VertexValue(vertexValue.stmt, changed, out, vertexValue.graphstore)
+            }
+        }
+        else {
+          Tools.update_graphstore(vertexValue.graphstore, msgSum)
+
+          in = Tools.getIn(vId, vertexValue.graphstore, vertexValue.stmt, grammar.value)
+
+          Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
+
+          val out = in
+
+          var changed = false
+
+          changed = !out.equals(vertexValue.pegraph)
+
+          VertexValue(vertexValue.stmt, changed, out, vertexValue.graphstore)
+        }
+
       }
     }
 
@@ -225,31 +255,43 @@ object Analysis
      *****************************/
     val sendMsg = (triplet: EdgeTriplet[VertexValue, Byte]) =>
     {
-      val tmp = new GraphStore()
-      if (triplet.srcAttr.changed && triplet.srcAttr.stmt.contains("callfptr")){
-        if (triplet.dstAttr.stmt.contains("calleefptr")){
-          if (isFeasible(new CfgNode(triplet.dstAttr.stmt).getStmt(), new CfgNode(triplet.srcAttr.stmt).getStmt(), triplet.srcAttr.pegraph, grammar.value)){
-            tmp.put(triplet.srcId, (triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
+      //triplet.dstAttr.graphstore += null
+      val tmp = new Msg()
+      val src_stmt = new CfgNode(triplet.srcAttr.stmt).getStmt()
+      val dst_stmt = new CfgNode(triplet.dstAttr.stmt).getStmt()
+
+      if (triplet.srcAttr.changed) {
+        if (src_stmt.getType() == TYPE.Callfptr){
+          if (dst_stmt.getType() == TYPE.Calleefptr){
+            if (isFeasible(dst_stmt, src_stmt, triplet.srcAttr.pegraph, grammar.value)){
+              tmp.put(triplet.srcId, (true, triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
+              Iterator((triplet.dstId, tmp))
+            }
+            else Iterator.empty
+          }
+          else {
+            tmp.put(triplet.srcId, (true, triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
             Iterator((triplet.dstId, tmp))
           }
-          else Iterator.empty
         }
-        else {
-          tmp.put(triplet.srcId, (triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
+        else if(dst_stmt.getType() == TYPE.Return && dst_stmt.asInstanceOf[Stmt_return].getLength() == 0 &&
+          (src_stmt.getType() == TYPE.Call || src_stmt.getType() == TYPE.Callfptr)) {
+          tmp.put(triplet.srcId, (false, triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
           Iterator((triplet.dstId, tmp))
         }
+        else
+          {
+            tmp.put(triplet.srcId, (true, triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
+            Iterator((triplet.dstId, tmp))
+          }
       }
-      else if(triplet.srcAttr.changed && !(triplet.dstAttr.stmt.contains("return") &&
-          new CfgNode(triplet.dstAttr.stmt).getStmt().asInstanceOf[Stmt_return].getLength() == 0 &&
-        (triplet.srcAttr.stmt.contains("call") || triplet.srcAttr.stmt.contains("callfptr")))) {
-        tmp.put(triplet.srcId, (triplet.srcAttr.stmt, triplet.srcAttr.pegraph))
-        Iterator((triplet.dstId, tmp))
+      else {
+        Iterator.empty
       }
-      else Iterator.empty
     }
 
     //目标点聚合收到的消息
-    val aggregateMsgs = (messagestore1: GraphStore, messagestore2: GraphStore) =>
+    val aggregateMsgs = (messagestore1: Msg, messagestore2: Msg) =>
     {
       messagestore1 ++= messagestore2
       messagestore1

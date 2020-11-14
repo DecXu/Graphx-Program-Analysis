@@ -44,15 +44,15 @@ object Transfer{
         transfer_Ret(in)
       }
       case TYPE.Calleefptr => {
-        //println(stmt.toString)
+        println(stmt.toString)
         transfer_Calleefptr(in)
       }
       case TYPE.Callfptr => {
-        //println(stmt.toString)
+        println(stmt.toString)
         transfer_Callfptr(in)
       }
       case TYPE.Skip => {
-        //println(stmt.toString)
+        println(stmt.toString)
         transfer_Skip(in)
       }
       case _ => {
