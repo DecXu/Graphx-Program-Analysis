@@ -162,23 +162,18 @@ object Tools {
     out
   }
 
-  def getIn(vId: VertexId, graphstore: GraphStore, current: String, grammar: Grammar): Pegraph = {
+  def getIn(graphstore: GraphStore, current: String, grammar: Grammar): Pegraph = {
     var out = new Pegraph
 
     if (graphstore.size == 1){
-      for (value <- graphstore.values){
-        out.decopy(value._2)
-//        if (new CfgNode(value._1).getStmt.getType() == TYPE.Call || new CfgNode(current).getStmt().getType() == TYPE.Return)
-//          println(vId + " " + new CfgNode(current).getStmt() + " ddd " + new CfgNode(value._1).getStmt)
-        out = getPartial(new CfgNode(current).getStmt(), new CfgNode(value._1).getStmt, out, grammar, graphstore)
-      }
+      val value = graphstore.last._2
+      out.decopy(value._2)
+      out = getPartial(new CfgNode(current).getStmt(), new CfgNode(value._1).getStmt, out, grammar, graphstore)
     }
     else {
       for (value <- graphstore.values){
         var out_graph = new Pegraph
         out_graph.decopy(value._2)
-//        if (new CfgNode(value._1).getStmt.getType() == TYPE.Call || new CfgNode(current).getStmt().getType() == TYPE.Return)
-//          println(vId + " " + new CfgNode(current).getStmt() + " sss " + new CfgNode(value._1).getStmt)
         out_graph = getPartial(new CfgNode(current).getStmt(), new CfgNode(value._1).getStmt, out_graph, grammar, graphstore)
         out.merge(out_graph)
       }

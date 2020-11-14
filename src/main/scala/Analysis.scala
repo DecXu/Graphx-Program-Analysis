@@ -22,12 +22,13 @@ object Analysis
     val startTime1 = System.currentTimeMillis
 
     type GraphStore = mutable.HashMap[VertexId, (String, Pegraph)]
+    // Boolean代表getin和updategraphstore的标志信息,C++系统中存在只更新本节点但不唤醒后继节点的情况，要进行特殊考虑（也是此标志位存在的意义）
     type Msg = mutable.HashMap[VertexId, (Boolean, String, Pegraph)]
     /**
      * @param stmt : 节点所代表的语句信息
      * @param changed : 表达节点在transfer计算完成后，pegraph信息是否发生变化
      * @param pegraph : 节点pegraph的当前信息
-     * @param graphstore : 节点的in集合，保存前置节点的类型信息和pegraph信息,Boolean代表getin和updategraphstore的标志信息
+     * @param graphstore : 节点的in集合，保存前置节点的类型信息和pegraph信息
      */
     case class VertexValue(stmt: String, changed: Boolean, pegraph: Pegraph, graphstore: GraphStore)
 
@@ -114,7 +115,7 @@ object Analysis
       val stmt = linesV.next()
       val id = stmt.split("\t")(0).toLong
       //-2l表示初始状态
-      vertexArr += ((id, VertexValue(stmt, false, new Pegraph(-2l), new GraphStore())))
+      vertexArr += ((id, VertexValue(stmt, false, new Pegraph(-1l), new GraphStore())))
     }
 
     //val sourceSingleton =  Source.fromFile(path_singleton)
@@ -142,7 +143,7 @@ object Analysis
 
     //StorageLevel.MEMORY_ONLY MEMORY_AND_DISK_SER
     val graph = Graph(vertices, edges, null, StorageLevel.MEMORY_ONLY, StorageLevel.MEMORY_ONLY)
-      .partitionBy(RandomVertexCut,1)
+      .partitionBy(RandomVertexCut,3)
       .persist(StorageLevel.MEMORY_ONLY)
 
     val startTime2 = System.currentTimeMillis
@@ -183,37 +184,17 @@ object Analysis
       }
       else
       {
-        if (msgSum.size == 1) {
-          var it: (VertexId, (Boolean, String, Pegraph)) = null
-          for (its <- msgSum) {
-            it = its
-          }
-            if (!it._2._1) {
-              val tmp = new Msg
-              tmp += it
-              Tools.update_graphstore(vertexValue.graphstore, tmp)
-              vertexValue
-            }
-            else {
-              Tools.update_graphstore(vertexValue.graphstore, msgSum)
+        val it: (VertexId, (Boolean, String, Pegraph)) = msgSum.last
 
-              in = Tools.getIn(vId, vertexValue.graphstore, vertexValue.stmt, grammar.value)
+        if (msgSum.size == 1 && !it._2._1) {
+          Tools.update_graphstore(vertexValue.graphstore, msgSum)
 
-              Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
-
-              val out = in
-
-              var changed = false
-              //changed = !Tool.isEquals(out, vertexvalue.pegraph)
-              changed = !out.equals(vertexValue.pegraph)
-
-              VertexValue(vertexValue.stmt, changed, out, vertexValue.graphstore)
-            }
+          vertexValue
         }
         else {
           Tools.update_graphstore(vertexValue.graphstore, msgSum)
 
-          in = Tools.getIn(vId, vertexValue.graphstore, vertexValue.stmt, grammar.value)
+          in = Tools.getIn(vertexValue.graphstore, vertexValue.stmt, grammar.value)
 
           Transfer.transfer(in, new CfgNode(vertexValue.stmt).getStmt(), grammar.value, singleton.value)
 
@@ -225,7 +206,6 @@ object Analysis
 
           VertexValue(vertexValue.stmt, changed, out, vertexValue.graphstore)
         }
-
       }
     }
 
