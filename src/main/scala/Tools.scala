@@ -88,7 +88,7 @@ object Tools {
     breakable{
       for (it <- graphstore){
         val pred = it._2
-        if (pred._1.contains("call") || pred._1.contains("callfptr")){
+        if (new CfgNode(pred._1).getStmt().getType() == TYPE.Call || new CfgNode(pred._1).getStmt().getType() == TYPE.Callfptr){
           pred_graph = it._2._2
           collect_associated_variables(ids, args, len, ret, pred_graph, grammar)
           break()
@@ -154,8 +154,8 @@ object Tools {
         out = new Pegraph()
       }
       else {
-        println("need extractSubGraph_exit!")
-        //out = extractSubGraph_exit(pred_graph, returnstmt.getArgs(), returnstmt.getLength(), returnstmt.getRet(), grammar, graphstore)
+        //println("need extractSubGraph_exit!")
+        out = extractSubGraph_exit(pred_graph, returnstmt.getArgs(), returnstmt.getLength(), returnstmt.getRet(), grammar, graphstore)
       }
     }
     else out = pred_graph

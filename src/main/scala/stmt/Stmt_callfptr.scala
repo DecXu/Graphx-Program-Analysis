@@ -30,7 +30,7 @@ class Stmt_callfptr extends Stmt{
       if (arg(0) == 'a') set_string.add(arg.substring(2))
       else if (arg(0) == 'r') this.ret = arg.substring(2).toLong
       else {
-        println("wrong arg type!!!")
+        println("wrong arg type int callfptr!!!")
         System.exit(1)
       }
     }

@@ -22,9 +22,9 @@ class CfgNode {
       case "call" => stmt = new Stmt_call(s)
       case "return" => stmt = new Stmt_return(s)
       case "ret" => stmt = new Stmt_ret()
-//      case "block" => stmt = new Stmt_return(s)
-//      case "callfptr" => stmt = new Stmt_return(s)
-//      case "calleefptr" => stmt = new Stmt_return(s)
+      case "block" => stmt = new Stmt_skip()
+      case "callfptr" => stmt = new Stmt_callfptr(s)
+      case "calleefptr" => stmt = new Stmt_calleefptr(s)
       case _ => {
         println(stmt_type)
         println("wrong stmt type in CfgNode!!!")
