@@ -12,8 +12,7 @@ class CfgNode {
     val s: Scanner = new Scanner(line)
     s.next()
     val stmt_type = s.next()
-    //println(stmt_type)
-    stmt_type match{
+    stmt_type match {
       case "assign" => stmt = new Stmt_assign(s)
       case "load" => stmt = new Stmt_load(s)
       case "store" => stmt = new Stmt_store(s)
@@ -33,8 +32,5 @@ class CfgNode {
     }
   }
 
-  @inline final def getStmt(): Stmt = {
-    stmt
-  }
-
+  @inline final def getStmt(): Stmt = stmt
 }

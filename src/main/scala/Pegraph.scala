@@ -4,11 +4,11 @@ import scala.collection.mutable
 
 class Pegraph extends Serializable {
 
-  private val graph =  mutable.Map.empty[VertexId, EdgeArray2]
+  private val graph =  mutable.Map.empty[VertexId, EdgeArray]
 
-  def this(vertexId: VertexId){
+  def this(vertexId: VertexId) {
     this()
-    graph.put(vertexId, new EdgeArray2)
+    graph.put(vertexId, new EdgeArray)
   }
 
   override def equals(obj: Any): Boolean = {
@@ -16,7 +16,7 @@ class Pegraph extends Serializable {
     if (graph.contains(-1l)) return false
     if (this eq pegraph) return true
     if (graph.size != pegraph.graph.size) return false
-    for (key <- graph.keySet){
+    for (key <- graph.keySet) {
       if (!pegraph.graph.contains(key)) return false
       else if (!graph(key).equals(pegraph.graph(key))) return false
     }
@@ -25,11 +25,8 @@ class Pegraph extends Serializable {
 
   def merge(prepegraph: Pegraph) = {
     val prepegraph_graph = prepegraph.getGraph()
-    //val graph = in.getGraph()
-    for (key <- prepegraph_graph.keySet){
-      if (!graph.contains(key)){
-        graph += (key -> prepegraph_graph(key))
-      }
+    for (key <- prepegraph_graph.keySet) {
+      if (!graph.contains(key)) graph += (key -> prepegraph_graph(key))
       else {
         val n1 = prepegraph_graph(key).getSize
         val n2 = this.getNumEdges(key)
@@ -46,34 +43,33 @@ class Pegraph extends Serializable {
   def getLabels(vertexId: VertexId ) = graph(vertexId).getLabels()
 
   def decopy(value: Pegraph) = {
-    for (key <- value.graph.keySet){
-      val tmp = new EdgeArray2
+    for (key <- value.graph.keySet) {
+      val tmp = new EdgeArray
       tmp.decopy(value.graph(key))
       graph.put(key, tmp)
     }
   }
 
-  def getGraph(): mutable.Map[VertexId, EdgeArray2] = graph
+  def getGraph(): mutable.Map[VertexId, EdgeArray] = graph
 
   def getNumEdges(index: VertexId): Int = {
-    if(!graph.contains(index)) graph += (index -> new EdgeArray2())
+    if (!graph.contains(index)) graph += (index -> new EdgeArray())
     graph(index).getSize()
   }
 
   def setEdgeArray(index: VertexId, numEdges: Int, edges: Array[VertexId], labels: Array[Byte]): Unit = {
-    if(!this.graph.contains(index)){
-      this.graph.put(index, new EdgeArray2())
+    if (!this.graph.contains(index)) {
+      this.graph.put(index, new EdgeArray())
     }
     this.graph(index).set(numEdges, edges, labels)
   }
 
-  def setEdgeArray(index: VertexId, array: EdgeArray2): Unit = this.graph(index) = array
-
+  def setEdgeArray(index: VertexId, array: EdgeArray): Unit = this.graph(index) = array
 
   def print_graph_map(): String = {
     var str: String = ""
     var size: Int = 0
-    for(it <- graph){
+    for (it <- graph) {
       str += it._1
       str += " -> "
       str += it._2

@@ -85,7 +85,7 @@ object Analysis
     //println(lines.mkString(","))
 //**************************HDFS*************************************
 
-    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/engine/entry.txt","UTF-8")
+    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/test/entry.txt","UTF-8")
     //val source_entry =  Source.fromFile(path_entry)
     val lines_entry = source_entry.getLines()
     //entry包含所有cfg入口点
@@ -98,7 +98,7 @@ object Analysis
     //entries是entry的广播变量
     val entries = sc.broadcast(entry)
 
-    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/engine/final","UTF-8")
+    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/test/final","UTF-8")
     //val sourceE =  Source.fromFile(path_final)
     val linesE = sourceE.getLines()
     while(linesE.hasNext)
@@ -108,7 +108,7 @@ object Analysis
     }
 
     //val sourceV =  Source.fromFile(path_stmt)
-    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/engine/id_stmt_info.txt","UTF-8")
+    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/test/id_stmt_info.txt","UTF-8")
     val linesV = sourceV.getLines
     while(linesV.hasNext)
     {
@@ -119,7 +119,7 @@ object Analysis
     }
 
     //val sourceSingleton =  Source.fromFile(path_singleton)
-    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/engine/var_singleton_info.txt","UTF-8")
+    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/test/var_singleton_info.txt","UTF-8")
     val linesSingleton = sourceSingleton.getLines()
     var SingletonBuffer = new ArrayBuffer[VertexId]()
     while(linesSingleton.hasNext) {

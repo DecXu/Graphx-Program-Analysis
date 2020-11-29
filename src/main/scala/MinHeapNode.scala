@@ -6,7 +6,7 @@ class MinHeapNode {
   var j: Int = 0 // next element's index
 }
 
-class MinHeap{
+class MinHeap {
   def replaceMin(p: MinHeapNode) = {
     harr(0) = p
     MinHeapify(0)
@@ -15,13 +15,15 @@ class MinHeap{
   @inline final def getMin(): MinHeapNode = harr(0)
 
   private var harr: Array[MinHeapNode] = Array.empty[MinHeapNode]
-  private var size: Int = 0;
-  def this(a: Array[MinHeapNode], size: Int){
+
+  private var size: Int = 0
+
+  def this(a: Array[MinHeapNode], size: Int) {
     this()
     this.size = size
     this.harr = a
     var i = (size - 1) / 2
-    while(i >= 0){
+    while (i >= 0) {
       MinHeapify(i)
       i -= 1
     }
@@ -34,15 +36,12 @@ class MinHeap{
     val l = left(i)
     val r = right(i)
     var smallest = i
-    if(l < size && myalgo.myCompare(harr(l).key_v,harr(l).key_c,harr(i).key_v,harr(i).key_c) < 0){
-      smallest = l
-    }
-    if(r < size && myalgo.myCompare(harr(r).key_v,harr(r).key_c,harr(smallest).key_v,harr(smallest).key_c) < 0){
-      smallest = r
-    }
-    //swap直接写入，避免对参数为val的处理
-    if(smallest != i){
-      var tmp = harr(i)
+    if (l < size && myalgo.myCompare(harr(l).key_v,harr(l).key_c,harr(i).key_v,harr(i).key_c) < 0) smallest = l
+
+    if (r < size && myalgo.myCompare(harr(r).key_v,harr(r).key_c,harr(smallest).key_v,harr(smallest).key_c) < 0) smallest = r
+
+    if (smallest != i) {
+      val tmp = harr(i)
       harr(i) = harr(smallest)
       harr(smallest) = tmp
       MinHeapify(smallest)
