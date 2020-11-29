@@ -16,8 +16,8 @@ object Analysis
   {
     //记录运行时间
     //屏蔽日志
-    //Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
-    //Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
+    Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+    Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
 
     val startTime1 = System.currentTimeMillis
 
@@ -85,7 +85,7 @@ object Analysis
     //println(lines.mkString(","))
 //**************************HDFS*************************************
 
-    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/test/entry.txt","UTF-8")
+    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/engine/entry.txt","UTF-8")
     //val source_entry =  Source.fromFile(path_entry)
     val lines_entry = source_entry.getLines()
     //entry包含所有cfg入口点
@@ -98,7 +98,7 @@ object Analysis
     //entries是entry的广播变量
     val entries = sc.broadcast(entry)
 
-    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/test/final","UTF-8")
+    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/engine/final","UTF-8")
     //val sourceE =  Source.fromFile(path_final)
     val linesE = sourceE.getLines()
     while(linesE.hasNext)
@@ -108,7 +108,7 @@ object Analysis
     }
 
     //val sourceV =  Source.fromFile(path_stmt)
-    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/test/id_stmt_info.txt","UTF-8")
+    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/engine/id_stmt_info.txt","UTF-8")
     val linesV = sourceV.getLines
     while(linesV.hasNext)
     {
@@ -119,7 +119,7 @@ object Analysis
     }
 
     //val sourceSingleton =  Source.fromFile(path_singleton)
-    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/test/var_singleton_info.txt","UTF-8")
+    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/engine/var_singleton_info.txt","UTF-8")
     val linesSingleton = sourceSingleton.getLines()
     var SingletonBuffer = new ArrayBuffer[VertexId]()
     while(linesSingleton.hasNext) {
@@ -150,7 +150,7 @@ object Analysis
 
     //-------------------------------------定义pregel处理逻辑-------------------------------------------------------------
     //pregel的迭代次数，要求大于等于1。次数为1表示节点处理完firstMessage信息后，在进行一次迭代计算
-    val iterations = 200
+    val iterations = 2000
     //表示节点信息的发送方向
     val edgeDirection = EdgeDirection.Out
     //所有节点初始时收到的消息
