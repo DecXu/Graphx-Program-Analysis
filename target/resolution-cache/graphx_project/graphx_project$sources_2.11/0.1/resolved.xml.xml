@@ -4,7 +4,7 @@
 		module="graphx_project$sources_2.11"
 		revision="0.1"
 		status="integration"
-		publication="20201110230550"
+		publication="20201130164100"
 	/>
 	<configurations>
 		<conf name="compile" visibility="public" description=""/>

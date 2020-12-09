@@ -16,8 +16,8 @@ object Analysis
   {
     //记录运行时间
     //屏蔽日志
-    Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
-    Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
+    //Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+    //Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
 
     val startTime1 = System.currentTimeMillis
 
@@ -37,7 +37,7 @@ object Analysis
     //graphx.GraphXUtils.registerKryoClasses(conf)
     conf.setAppName("Analysis")
     //  .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-        .setMaster("local[2]")
+    //    .setMaster("local[10]")
     //  .set("spark.kryo.registrationRequired", "true")
     //  .registerKryoClasses(Array(classOf[VertexValue]
     //    ,classOf[java.util.HashMap[java.lang.Long, java.util.HashMap[java.lang.Long, EdgeArray]]]
@@ -51,13 +51,13 @@ object Analysis
     val edgeArr = new ArrayBuffer[Edge[Byte]]()
 
 //**************************HDFS*************************************
-  /*  val file_start = "hdfs://slave201:9000/analysis/start"
+    val file_start = "hdfs://slave201:9000/analysis/start"
     sc.addFile(file_start)
     val path_start = SparkFiles.get("start")
     val source_start = Source.fromFile(path_start)
     val lines_start = source_start.getLines()
 
-    val start: Array[String] = new Array[String](4)
+    val start: Array[String] = new Array[String](5)
     var i = 0
     while(lines_start.hasNext){
       val en = lines_start.next()
@@ -68,16 +68,19 @@ object Analysis
     val file_final = start(1)
     val file_stmt = start(2)
     val file_singleton = start(3)
+    val file_grammar = start(4)
 
     sc.addFile(file_entry)
     sc.addFile(file_final)
     sc.addFile(file_stmt)
     sc.addFile(file_singleton)
+    sc.addFile(file_grammar)
 
     val path_entry = SparkFiles.get("entry")
     val path_final = SparkFiles.get("final")
     val path_stmt = SparkFiles.get("id_stmt_info")
-    val path_singleton = SparkFiles.get("singleton")*/
+    val path_singleton = SparkFiles.get("singleton")
+    val path_grammar = SparkFiles.get("grammar")
     //println(path)
     //val source_entry = Source.fromFile(path_entry)
     //val lineIterator = source.getLines
@@ -85,8 +88,8 @@ object Analysis
     //println(lines.mkString(","))
 //**************************HDFS*************************************
 
-    val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/test/entry.txt","UTF-8")
-    //val source_entry =  Source.fromFile(path_entry)
+    //val source_entry =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/entry.txt","UTF-8")
+    val source_entry =  Source.fromFile(path_entry)
     val lines_entry = source_entry.getLines()
     //entry包含所有cfg入口点
     val entry = mutable.Set[Long]()
@@ -98,8 +101,8 @@ object Analysis
     //entries是entry的广播变量
     val entries = sc.broadcast(entry)
 
-    val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/test/final","UTF-8")
-    //val sourceE =  Source.fromFile(path_final)
+    //val sourceE =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/final","UTF-8")
+    val sourceE =  Source.fromFile(path_final)
     val linesE = sourceE.getLines()
     while(linesE.hasNext)
     {
@@ -107,8 +110,8 @@ object Analysis
       edgeArr += Edge(ee(0).toLong, ee(1).toLong, 0)
     }
 
-    //val sourceV =  Source.fromFile(path_stmt)
-    val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/test/id_stmt_info.txt","UTF-8")
+    val sourceV =  Source.fromFile(path_stmt)
+    //val sourceV =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/id_stmt_info.txt","UTF-8")
     val linesV = sourceV.getLines
     while(linesV.hasNext)
     {
@@ -118,8 +121,8 @@ object Analysis
       vertexArr += ((id, VertexValue(stmt, false, new Pegraph(-1l), new GraphStore())))
     }
 
-    //val sourceSingleton =  Source.fromFile(path_singleton)
-    val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/test/var_singleton_info.txt","UTF-8")
+    val sourceSingleton =  Source.fromFile(path_singleton)
+    //val sourceSingleton =  Source.fromFile("/home/decxu/Documents/analysis_data/intl/var_singleton_info.txt","UTF-8")
     val linesSingleton = sourceSingleton.getLines()
     var SingletonBuffer = new ArrayBuffer[VertexId]()
     while(linesSingleton.hasNext) {
@@ -128,7 +131,8 @@ object Analysis
     }
     val singleton = sc.broadcast(new Singleton(SingletonBuffer.toSet))
 
-    val sourceG = Source.fromFile("/home/decxu/Documents/analysis_data/simple/rules_pointsto.txt","UTF-8")
+    val sourceG = Source.fromFile(path_grammar)
+    //val sourceG = Source.fromFile("/home/decxu/Documents/analysis_data/simple/rules_pointsto.txt","UTF-8")
     val linesG = sourceG.getLines()
     val grammars = new Grammar()
     while(linesG.hasNext){
@@ -141,10 +145,9 @@ object Analysis
     val vertices: RDD[(VertexId, VertexValue)] = sc.parallelize(vertexArr)
     val edges: RDD[Edge[Byte]] = sc.parallelize(edgeArr)
 
-    //StorageLevel.MEMORY_ONLY MEMORY_AND_DISK_SER
-    val graph = Graph(vertices, edges, null, StorageLevel.MEMORY_ONLY, StorageLevel.MEMORY_ONLY)
-      .partitionBy(RandomVertexCut,5)
-      .persist(StorageLevel.MEMORY_ONLY)
+    val graph = Graph(vertices, edges, null, StorageLevel.MEMORY_AND_DISK, StorageLevel.MEMORY_AND_DISK)
+      .partitionBy(RandomVertexCut,50)
+      .persist(StorageLevel.MEMORY_AND_DISK)
 
     val startTime2 = System.currentTimeMillis
 
